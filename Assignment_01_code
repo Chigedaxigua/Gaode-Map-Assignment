@@ -1,0 +1,60 @@
+import requests
+import re
+import numpy as np
+import json
+r = requests.get('http://map.amap.com/service/subway?_1469083453978&srhdata=1100_drw_beijing.json')
+data1 = json.loads(r.text)
+
+def get_lines_stations_info(text):
+    # 请在这里写上你的代码
+    lines_info = {}
+    stations_info = {}
+    for lines in data2:
+        lines_name = lines['kn']                                 #提取线路 
+        lines_info[lines_name] = [i['n'] for i in lines['st']]     #提取站点名称
+        for i in lines['st']:                                    #提取坐标
+            x_y = re.findall("(\d+.\d+),(\d+.\d+)", i['sl'])[0]
+            x_y = tuple(map(float,x_y))
+            stations_info[i['n']] = x_y
+    return lines_info, stations_info
+    return x_y
+lines_info, stations_info = get_lines_stations_info(r.text)
+
+
+# 根据线路信息，建立站点邻接表dict
+def get_neighbor_info(lines_info):
+    neighbor_info = {}
+    for line, stations in lines_info.items():
+        for i, station in enumerate(stations):
+            if i == 0:
+                neighbor_info.setdefault(stations[i], []).append(stations[i+1])
+            elif i == len(stations)-1:
+                neighbor_info.setdefault(stations[i], []).append(stations[i-1])
+
+            else:
+                neighbor_info.setdefault(stations[i], []).append(stations[i+1])
+                neighbor_info.setdefault(stations[i], []).append(stations[i-1])
+
+    return neighbor_info
+
+neighbor_info = get_neighbor_info(lines_info)
+
+
+# 画地铁图
+import networkx as nx
+import matplotlib
+import matplotlib.pyplot as plt
+
+# 如果汉字无法显示，请参照
+matplotlib.rcParams['font.sans-serif'] = ['SimHei'] 
+
+# matplotlib.rcParams['font.family']='sans-serif'
+plt.figure(figsize=(30,30))
+subway_graph = nx.Graph()
+subway_graph.add_nodes_from(list(stations_info.keys()))
+nx.draw(subway_graph,stations_info,with_labels = True, node_size=10)
+subway_connection_graph = nx.Graph(neighbor_info)
+nx.draw(subway_connection_graph,stations_info,with_labels=True,node_size=10)
+
+
+                                      #DFS, BFS 还没有搞懂， 看一下答案再补上code
